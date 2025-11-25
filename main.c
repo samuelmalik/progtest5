@@ -12,6 +12,14 @@ typedef struct TRecord {
     int min;
 }TRECORD;
 
+typedef struct TSearch {
+    char rz[1001];
+    char mon[4];
+    int day;
+    int hour;
+    int min;
+}TSEARCH;
+
 typedef struct TArray {
     TRECORD *data;
     int size; // describes total items in array
@@ -21,7 +29,7 @@ typedef struct TArray {
 // Functions
 
 void initArray(TARRAY *arr) {
-    arr->data = (TARRAY*)malloc(sizeof(TRECORD));
+    arr->data = (TRECORD*)malloc(sizeof(TRECORD));
     arr->size = 0;
     arr->capacity = 1;
 }
@@ -57,6 +65,8 @@ bool isTimeValid(char mon[4], int day, int hr, int min) {
 int readData(TARRAY *arr) {
     TRECORD rec;
     char c1,c2=',';
+
+    printf("Data z kamer:\n");
     if (scanf("%c",&c1)!=1 || c1!='{') return 1;
 
     while (c2==',') {
@@ -67,6 +77,19 @@ int readData(TARRAY *arr) {
         appendArray(arr,rec);
     }
     return 0;
+}
+
+int readRequests(TARRAY arr) {
+    printf("Hledani:\n");
+    while (true) {
+        TSEARCH src;
+        //Check for valid search data
+        int res = scanf(" %1000s %3s %d %d : %d",src.rz,src.mon,&src.day,&src.hour,&src.min);
+        if (res == EOF) return 0;
+        if (res != 5) return 1;
+
+        //Function to make result
+    }
 }
 
 int main(void) {
@@ -81,5 +104,10 @@ int main(void) {
     }
 
     // Process requests
+    if (readRequests(arr)) {
+        printf("Nespravny vstup");
+        return 1;
+    };
+    printf("KONEC\n");
     return 0;
 }
