@@ -109,13 +109,60 @@ int readData(TARRAY *arr) {
 }
 
 void searchRecord(TARRAY arr, TSEARCH *src) {
+    int diffA=-1, diffB=-1,countA=0, countB=0, countP=0, indexP, indexA, indexB;
+    int diff, srcTime, itemTime;
+    bool isMatched=false;
+
     printf("\n====Hladam: %s ", src->rz);
     printf("Pocet minut hladaneho: %d\n", dateToMins(src->mon,src->day,src->hour,src->min));
     for (int i = 0 ; i < arr.size; i++) {
-        printf("Polozka: %s ", arr.data[i].rz);
-        printf("Pocet minut polozky: %d\n", dateToMins(arr.data[i].mon,arr.data[i].day,arr.data[i].hour,arr.data[i].min));
-    }
+        // only searched vehoicles
+        if (strcmp(src->rz,arr.data[i].rz)==0) {
+            printf("Polozka: %s ", arr.data[i].rz);
+            printf("Pocet minut polozky: %d\n", dateToMins(arr.data[i].mon,arr.data[i].day,arr.data[i].hour,arr.data[i].min));
+            // porovnat diff
+            itemTime = dateToMins(arr.data[i].mon,arr.data[i].day,arr.data[i].hour,arr.data[i].min);
+            srcTime = dateToMins(src->mon,src->day,src->hour,src->min);
+            diff = abs(itemTime-srcTime);
 
+            if (diff==0) {
+                isMatched=true;
+                countP++;
+                indexP=i;
+            }
+
+            if ((diff < diffA||diffA==-1) && itemTime > srcTime) {
+                diffA = diff;
+                countA=1;
+                indexA=i;
+            } else if ((diff < diffB||diffB==-1) && itemTime < srcTime) {
+                diffB = diff;
+                countB=1;
+                indexB=i;
+            } else if (diffA == diff) {
+                countA++;
+            } else if (diffB == diff) {
+                countB++;
+            }
+        }
+    }
+    if (isMatched) {
+        printf("> Presne: %s %d %02d:%02d, %dx [10, 10, 17]\n",arr.data[indexP].mon,arr.data[indexP].day,arr.data[indexP].hour, arr.data[indexP].min ,countP);
+    }else {
+        if (countB==0) {
+            printf("> Predchazejici: N/A\n");
+        } else {
+            printf("> Predchazejici: %s %d %02d:%02d, %dx [10, 10, 17]\n",arr.data[indexB].mon,arr.data[indexB].day,arr.data[indexB].hour, arr.data[indexB].min ,countB);
+        }
+        if (countA==0) {
+            printf("> Pozdejsi: N/A\n");
+        } else {
+            printf("> Pozdejsi: %s %d %02d:%02d, %dx [10, 10, 17]\n",arr.data[indexA].mon,arr.data[indexA].day,arr.data[indexA].hour, arr.data[indexA].min ,countA);
+        }
+    }
+    if (countA==0 && countB==0) {
+        printf("> Automobil nenalezen.\n");
+    }
 }
 
 int readRequests(TARRAY arr) {
@@ -151,3 +198,19 @@ int main(void) {
     printf("KONEC\n");
     return 0;
 }
+
+/*
+{10: ABC-12-34 Oct 1 7:30,
+289: XYZ-98-76 Oct 10 15:40,
+25: ABC-12-34 Oct 1 8:50,
+42: Slartibartfast Dec 21 6:00,
+11: ABC-12-34 Oct 1 10:50,
+10: ABC-12-34 Oct 1 7:30,
+17: ABC-12-34 Oct 1 7:30}
+ABC-12-34 Oct 1 9:30
+ABC-12-34 Oct 1 8:30
+ABC-12-34 Oct 1 7:30
+XYZ-98-76 Nov 30 0:00
+abc-12-34 Oct 12 1:23
+Slartibartfast Jan 24 10:42
+ */
