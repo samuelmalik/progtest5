@@ -62,6 +62,35 @@ bool isTimeValid(char mon[4], int day, int hr, int min) {
     return true;
 }
 
+int dateToMins(char mon[4], int day, int hr, int min) {
+    if (!strcmp(mon, "Jan")) {
+        return (day-1)*24*60 + hr*60 + min;
+    } if (!strcmp(mon, "Feb")) {
+        return (31+day-1)*24*60 + hr*60 + min;
+    } if (!strcmp(mon, "Mar")) {
+        return (31+28+day-1)*24*60 + hr*60 + min;
+    } if (!strcmp(mon, "Apr")) {
+        return (31+28+31+day-1)*24*60 + hr*60 + min;
+    } if (!strcmp(mon, "Maj")) {
+        return (31+28+31+30+day-1)*24*60 + hr*60 + min;
+    } if (!strcmp(mon, "Jun")) {
+        return (31+28+31+30+31+day-1)*24*60 + hr*60 + min;
+    } if (!strcmp(mon, "Jul")) {
+        return (31+28+31+30+31+30+day-1)*24*60 + hr*60 + min;
+    } if (!strcmp(mon, "Aug")) {
+        return (31+28+31+30+31+30+31+day-1)*24*60 + hr*60 + min;
+    } if (!strcmp(mon, "Sep")) {
+        return (31+28+31+30+31+30+31+31+day-1)*24*60 + hr*60 + min;
+    } if (!strcmp(mon, "Oct")) {
+        return (31+28+31+30+31+30+31+31+30+day-1)*24*60 + hr*60 + min;
+    } if (!strcmp(mon, "Nov")) {
+        return (31+28+31+30+31+30+31+31+30+31+day-1)*24*60 + hr*60 + min;
+    } if (!strcmp(mon, "Dec")) {
+        return (31+28+31+30+31+30+31+31+30+31+30+day-1)*24*60 + hr*60 + min;
+    }
+    return 0;
+}
+
 int readData(TARRAY *arr) {
     TRECORD rec;
     char c1,c2=',';
@@ -79,6 +108,16 @@ int readData(TARRAY *arr) {
     return 0;
 }
 
+void searchRecord(TARRAY arr, TSEARCH *src) {
+    printf("\n====Hladam: %s ", src->rz);
+    printf("Pocet minut hladaneho: %d\n", dateToMins(src->mon,src->day,src->hour,src->min));
+    for (int i = 0 ; i < arr.size; i++) {
+        printf("Polozka: %s ", arr.data[i].rz);
+        printf("Pocet minut polozky: %d\n", dateToMins(arr.data[i].mon,arr.data[i].day,arr.data[i].hour,arr.data[i].min));
+    }
+
+}
+
 int readRequests(TARRAY arr) {
     printf("Hledani:\n");
     while (true) {
@@ -89,6 +128,7 @@ int readRequests(TARRAY arr) {
         if (res != 5) return 1;
 
         //Function to make result
+        searchRecord(arr, &src);
     }
 }
 
