@@ -26,6 +26,12 @@ typedef struct TArray {
     int capacity;
 }TARRAY;
 
+typedef struct TIdArray {
+    int *data;
+    int size; // describes total items in array
+    int capacity;
+}TID_ARRAY;
+
 // Functions
 
 void initArray(TARRAY *arr) {
@@ -47,6 +53,28 @@ void appendArray(TARRAY *arr, TRECORD record) {
         arr->data = (TRECORD*)realloc(arr->data, arr->capacity * sizeof(TRECORD));
     }
     arr->data[arr->size] = record;
+    arr->size++;
+}
+
+void initIdArray(TID_ARRAY *arr) {
+    arr->data = (int*)malloc(sizeof(int));
+    arr->size = 0;
+    arr->capacity = 1;
+}
+
+void freeIdArray(TID_ARRAY *arr) {
+    free(arr->data);
+    arr->size = 0;
+    arr->capacity = 0;
+    arr->data = NULL;
+}
+
+void appendIdArray(TID_ARRAY *arr, int id) {
+    if (arr->size  == arr->capacity) {
+        arr->capacity *= 2;
+        arr->data = (int*)realloc(arr->data, arr->capacity * sizeof(int));
+    }
+    arr->data[arr->size] = id;
     arr->size++;
 }
 
@@ -96,7 +124,7 @@ int readData(TARRAY *arr) {
     char c1,c2=',';
 
     printf("Data z kamer:\n");
-    if (scanf("%c",&c1)!=1 || c1!='{') return 1;
+    if (scanf(" %c",&c1)!=1 || c1!='{') return 1;
 
     while (c2==',') {
         int res = scanf(" %d : %1000s %3s %d %d : %d %c",&rec.id,rec.rz,rec.mon,&rec.day,&rec.hour,&rec.min,&c2);
@@ -113,13 +141,19 @@ void searchRecord(TARRAY arr, TSEARCH *src) {
     int diff, srcTime, itemTime;
     bool isMatched=false;
 
-    printf("\n====Hladam: %s ", src->rz);
-    printf("Pocet minut hladaneho: %d\n", dateToMins(src->mon,src->day,src->hour,src->min));
+    TID_ARRAY arrB,arrA,arrP;
+
+    //printf("\n====Hladam: %s ", src->rz);
+    //printf("Pocet minut hladaneho: %d\n", dateToMins(src->mon,src->day,src->hour,src->min));
+
+    initIdArray(&arrA);
+    initIdArray(&arrB);
+    initIdArray(&arrP);
     for (int i = 0 ; i < arr.size; i++) {
         // only searched vehoicles
         if (strcmp(src->rz,arr.data[i].rz)==0) {
-            printf("Polozka: %s ", arr.data[i].rz);
-            printf("Pocet minut polozky: %d\n", dateToMins(arr.data[i].mon,arr.data[i].day,arr.data[i].hour,arr.data[i].min));
+            //printf("Polozka: %s ", arr.data[i].rz);
+            //printf("Pocet minut polozky: %d\n", dateToMins(arr.data[i].mon,arr.data[i].day,arr.data[i].hour,arr.data[i].min));
             // porovnat diff
             itemTime = dateToMins(arr.data[i].mon,arr.data[i].day,arr.data[i].hour,arr.data[i].min);
             srcTime = dateToMins(src->mon,src->day,src->hour,src->min);
@@ -129,40 +163,92 @@ void searchRecord(TARRAY arr, TSEARCH *src) {
                 isMatched=true;
                 countP++;
                 indexP=i;
+                appendIdArray(&arrP,arr.data[i].id);
             }
 
             if ((diff < diffA||diffA==-1) && itemTime > srcTime) {
                 diffA = diff;
                 countA=1;
                 indexA=i;
+                freeIdArray(&arrA);
+                initIdArray(&arrA);
+                appendIdArray(&arrA,arr.data[i].id);
             } else if ((diff < diffB||diffB==-1) && itemTime < srcTime) {
                 diffB = diff;
                 countB=1;
                 indexB=i;
+                freeIdArray(&arrB);
+                initIdArray(&arrB);
+                appendIdArray(&arrB,arr.data[i].id);
             } else if (diffA == diff) {
                 countA++;
+                appendIdArray(&arrA,arr.data[i].id);
             } else if (diffB == diff) {
                 countB++;
+                appendIdArray(&arrB,arr.data[i].id);
             }
         }
     }
+    /*TEST ARRAYOV*/
+    /*
+    printf("\nKamery pred: ");
+    for (int i = 0 ; i < arrB.size; i++) {
+        printf("%d,", arrB.data[i]);
+    }
+    printf("\nKamery po: ");
+    for (int i = 0 ; i < arrA.size; i++) {
+        printf("%d,", arrA.data[i]);
+    }
+    printf("\nKamery presne: ");
+    for (int i = 0 ; i < arrP.size; i++) {
+        printf("%d,", arrP.data[i]);
+    }
+    */
+    /*KONIEC TESTU*/
+
     if (isMatched) {
-        printf("> Presne: %s %d %02d:%02d, %dx [10, 10, 17]\n",arr.data[indexP].mon,arr.data[indexP].day,arr.data[indexP].hour, arr.data[indexP].min ,countP);
+        printf("> Presne: %s %d %02d:%02d, %dx [",arr.data[indexP].mon,arr.data[indexP].day,arr.data[indexP].hour, arr.data[indexP].min ,countP);
+        // Printing cameras id
+        for (int i = 0 ; i < arrP.size; i++) {
+            if (arrP.size-1==i) {
+                printf("%d]\n", arrP.data[i]);
+            } else {
+                printf("%d, ", arrP.data[i]);
+            }
+        }
+    }else if (countA==0 && countB==0) {
+        printf("> Automobil nenalezen.\n");
     }else {
         if (countB==0) {
             printf("> Predchazejici: N/A\n");
         } else {
-            printf("> Predchazejici: %s %d %02d:%02d, %dx [10, 10, 17]\n",arr.data[indexB].mon,arr.data[indexB].day,arr.data[indexB].hour, arr.data[indexB].min ,countB);
+            printf("> Predchazejici: %s %d %02d:%02d, %dx [",arr.data[indexB].mon,arr.data[indexB].day,arr.data[indexB].hour, arr.data[indexB].min ,countB);
+            // Printing cameras id
+            for (int i = 0 ; i < arrB.size; i++) {
+                if (arrB.size-1==i) {
+                    printf("%d]\n", arrB.data[i]);
+                } else {
+                    printf("%d, ", arrB.data[i]);
+                }
+            }
         }
         if (countA==0) {
             printf("> Pozdejsi: N/A\n");
         } else {
-            printf("> Pozdejsi: %s %d %02d:%02d, %dx [10, 10, 17]\n",arr.data[indexA].mon,arr.data[indexA].day,arr.data[indexA].hour, arr.data[indexA].min ,countA);
+            printf("> Pozdejsi: %s %d %02d:%02d, %dx [",arr.data[indexA].mon,arr.data[indexA].day,arr.data[indexA].hour, arr.data[indexA].min ,countA);
+            // Printing cameras id
+            for (int i = 0 ; i < arrA.size; i++) {
+                if (arrA.size-1==i) {
+                    printf("%d]\n", arrA.data[i]);
+                } else {
+                    printf("%d, ", arrA.data[i]);
+                }
+            }
         }
     }
-    if (countA==0 && countB==0) {
-        printf("> Automobil nenalezen.\n");
-    }
+    freeIdArray(&arrA);
+    freeIdArray(&arrB);
+    freeIdArray(&arrP);
 }
 
 int readRequests(TARRAY arr) {
@@ -172,7 +258,7 @@ int readRequests(TARRAY arr) {
         //Check for valid search data
         int res = scanf(" %1000s %3s %d %d : %d",src.rz,src.mon,&src.day,&src.hour,&src.min);
         if (res == EOF) return 0;
-        if (res != 5) return 1;
+        if (res != 5 || !isTimeValid(src.mon,src.day,src.hour,src.min)) return 1;
 
         //Function to make result
         searchRecord(arr, &src);
@@ -186,16 +272,15 @@ int main(void) {
 
     // Reading data
     if (readData(&arr)) {
-        printf("Nespravny vstup");
+        printf("Nespravny vstup.\n");
         return 1;
     }
 
     // Process requests
     if (readRequests(arr)) {
-        printf("Nespravny vstup");
+        printf("Nespravny vstup.\n");
         return 1;
     };
-    printf("KONEC\n");
     return 0;
 }
 
